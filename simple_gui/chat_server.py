@@ -138,6 +138,25 @@ class Server:
                     to_sock = self.logged_name2sock[g]
                     self.indices[g].add_msg_and_index(said2)
                     mysend(to_sock, json.dumps({"action":"exchange", "from":msg["from"], "message":msg["message"]}))
+
+                # ---- ALSO FORWARD EVERY MESSAGE TO TrishaBot (global bot) ----
+                if "TrishaBot" in self.logged_name2sock:
+                    bot_sock = self.logged_name2sock["TrishaBot"]
+                    if bot_sock is not from_sock:
+                        mysend(bot_sock, json.dumps({
+                            "action": "exchange",
+                            "from": msg["from"],
+                            "message": msg["message"]
+                        }))
+                # 3) If the message CAME FROM TrishaBot, broadcast it to all humans
+                if from_name == "TrishaBot":
+                    for name, to_sock in self.logged_name2sock.items():
+                        if name != "TrishaBot":
+                            mysend(to_sock, json.dumps({
+                            "action": "exchange",
+                            "from": msg["from"],      # "TrishaBot"
+                            "message": msg["message"] # her reply
+                        }))
 #==============================================================================
 #                 listing available peers
 #==============================================================================

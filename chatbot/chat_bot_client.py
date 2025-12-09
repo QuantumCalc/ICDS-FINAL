@@ -16,12 +16,15 @@ class ChatBotClient():
 
     def _update_system_message(self):
         system_content = (
-            f"You are a chatbot with the following personality: {self.personality}. "
-            "Reply in one clear, complete sentence unless the user requests more detail. "
-            "Never answer with just a single word or a fragment. "
-            "For example, if the user asks 'What is the capital of France?', "
-            "you MUST reply 'The capital of France is Paris.' and not just 'Paris'."
-        )
+            "You are TrishaBot, a friendly chatbot embedded inside a small student chat app. "
+            "Your replies MUST be short, clean, and concise — NEVER more than 2 sentences. "
+            "Do NOT write long paragraphs. Do NOT give historical background. Do NOT ramble. "
+            "Avoid typos, avoid repeated sentences, and keep grammar correct. "
+            "If the user asks a factual question, answer briefly and directly. "
+            "Example: If asked 'What is the capital of France?', answer: "
+            "'The capital of France is Paris.' "
+            "Do not exceed that level of detail unless the user explicitly says 'explain more'."
+            )
 
         # Insert or update system message
         if self.messages and self.messages[0]["role"] == "system":
@@ -33,20 +36,23 @@ class ChatBotClient():
         self.personality = new_personality
         self._update_system_message()
 
-    
     def chat(self, message: str) -> str:
-        # Adding user message to history
         self.messages.append({"role": "user", "content": message})
-        
-        # Call local LLM through Ollama
-        response = ollama.chat(
-            model=self.model,
-            messages=self.messages
-        )
+        print("ChatBotClient.chat() received:", message)
 
-        reply = response["message"]["content"]
+        try:
+            response = ollama.chat(
+                model=self.model,
+                messages=self.messages
+            )
+            reply = response["message"]["content"]
+            print("ChatBotClient.chat() got reply:", reply[:80])
 
-        # Save assistant reply to history
+        except Exception as e:
+            print("Error in ollama.chat:", e)
+            reply = f"(TrishaBot error talking to model: {e})"
+
+    # Save reply
         self.messages.append({"role": "assistant", "content": reply})
         return reply
     
