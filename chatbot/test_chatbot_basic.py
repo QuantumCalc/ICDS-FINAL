@@ -1,6 +1,6 @@
 # Testing chat_bot_client
 
-from chatbot.chat_bot_client import ChatBotClient
+from chat_bot_client import ChatBotClient
 
 def main():
     bot = ChatBotClient()  # uses phi3:mini and your system prompt
