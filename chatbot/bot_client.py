@@ -8,7 +8,7 @@ listens to messages, and responds when users type @trishabot ...
 import socket
 import threading
 import json
-from chat_bot_client import ChatBotClient   # your LLM wrapper
+from chat_bot_client import ChatBotClient   # LLM wrapper
 
 HOST = "127.0.0.1"      # same machine running the server
 PORT = 1112             # MUST match CHAT_PORT in chat_utils.py
