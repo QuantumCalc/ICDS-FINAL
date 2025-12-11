@@ -130,33 +130,24 @@ class Server:
 #==============================================================================
             elif msg["action"] == "exchange":
                 from_name = self.logged_sock2name[from_sock]
-                the_guys = self.group.list_me(from_name)
-                #said = msg["from"]+msg["message"]
-                said2 = text_proc(msg["message"], from_name)
-                self.indices[from_name].add_msg_and_index(said2)
-                for g in the_guys[1:]:
-                    to_sock = self.logged_name2sock[g]
-                    self.indices[g].add_msg_and_index(said2)
-                    mysend(to_sock, json.dumps({"action":"exchange", "from":msg["from"], "message":msg["message"]}))
+                found, room_name = self.group.find_group(from_name)
+                text_to_index = f"[{room_name}] {msg['from']} {msg['message']}"
+                self.indices[from_name].add_msg_and_index(text_to_index)
 
-                # ---- ALSO FORWARD EVERY MESSAGE TO TrishaBot (global bot) ----
-                if "TrishaBot" in self.logged_name2sock:
-                    bot_sock = self.logged_name2sock["TrishaBot"]
-                    if bot_sock is not from_sock:
-                        mysend(bot_sock, json.dumps({
-                            "action": "exchange",
-                            "from": msg["from"],
-                            "message": msg["message"]
-                        }))
-                # 3) If the message CAME FROM TrishaBot, broadcast it to all humans
-                if from_name == "TrishaBot":
-                    for name, to_sock in self.logged_name2sock.items():
-                        if name != "TrishaBot":
+                the_guys = self.group.list_me(from_name)
+                for g in the_guys:
+                    if g != from_name:
+                        if g in self.logged_name2sock:
+                            to_sock = self.logged_name2sock[g]
+                            self.indices[g].add_msg_and_index(text_to_index)
+                            
                             mysend(to_sock, json.dumps({
-                            "action": "exchange",
-                            "from": msg["from"],      # "TrishaBot"
-                            "message": msg["message"] # her reply
-                        }))
+                                "action": "exchange", 
+                                "from": msg["from"], 
+                                "message": msg["message"]
+                            }))
+                        else:
+                            self.group.leave(g)
 #==============================================================================
 #                 listing available peers
 #==============================================================================
