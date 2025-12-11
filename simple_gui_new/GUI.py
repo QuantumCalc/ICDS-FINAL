@@ -228,8 +228,7 @@ class GUI:
         self.btn_create = Button(self.sidebar, 
                                  text="Create Room", 
                                  font="Helvetica 10 bold", 
-                                 bg="#2ECC71", 
-                                 fg="white",
+                                 bg="#2ECC71",
                                  command=self.open_create_room_popup)
         self.btn_create.place(relx=0.1, 
                               rely=0.35, 
@@ -241,7 +240,6 @@ class GUI:
                                text="Join Room", 
                                font="Helvetica 10 bold", 
                                bg="#3498DB", 
-                               fg="white",
                                command=self.open_join_room_popup)
         self.btn_join.place(relx=0.1,
                             rely=0.45, 
@@ -253,7 +251,6 @@ class GUI:
                               text="Disconnect", 
                               font="Helvetica 10 bold", 
                               bg="#E74C3C", 
-                              fg="white",
                               command=lambda: self.sendButton("bye"))
         self.btn_bye.place(relx=0.1, 
                            rely=0.55, 
@@ -297,8 +294,7 @@ class GUI:
         self.btn_quit = Button(self.sidebar, 
                                text="Quit", 
                                font="Helvetica 10 bold", 
-                               bg="#C0392B", # Dark Red
-                               fg="white",
+                               bg="#C0392B",
                                command=self.on_close)
         self.btn_quit.place(relx=0.1,
                             rely=0.92,
@@ -402,8 +398,6 @@ class GUI:
   
     # function to basically start the thread for sending messages
     def sendButton(self, msg):
-        #if msg.startswith("!bot"):
-            #return
 
         if msg == "who" or msg == "time" or msg.startswith("p ") or msg.startswith("?"):
             self.textCons.config(state=NORMAL)
@@ -447,13 +441,12 @@ class GUI:
                              text=room_name, 
                              font="Helvetica 11", 
                              bg="#3498DB", 
-                             fg="white", 
                              width=25,
                              command=lambda r=room_name: self.join_specific_room(r, picker))
                 btn.pack(pady=5)
 
         Button(picker, text="Cancel", command=picker.destroy,
-               bg=c["input_bg"], fg=c["input_fg"]).pack(side=BOTTOM, pady=10)
+               bg=c["input_bg"]).pack(side=BOTTOM, pady=10)
 
     def join_specific_room(self, room_name, window):
         self.sendButton(f"c {room_name}")
