@@ -63,17 +63,21 @@ class BotClient:
         self.chat_history = []
         self.max_history = 100
 
+        # remember last answered question per user to avoid duplicate replies
+        self.last_answered = {}   # maps from_name -> question string
+
         # ---- LOGIN to the server ----
         login_msg = json.dumps({"action": "login", "name": self.name})
         mysend(self.sock, login_msg)
 
-        # ---- AUTO-JOIN ROOM #TrishaBot ----
-        # This tells the server "put TrishaBot into room #TrishaBot"
+        # ---- AUTO-JOIN GROUP ROOM FOR BONUS FEATURE ----
+        group_room = "projectroom"   # 🔹 choose any room name you like
         connect_msg = json.dumps({
             "action": "connect",
-            "target": self.name      # server will turn "TrishaBot" into "#TrishaBot"
+            "target": group_room
         })
         mysend(self.sock, connect_msg)
+        print(f"{self.name} joined group room:", group_room)
 
         self.bot = ChatBotClient()
 
@@ -95,6 +99,7 @@ class BotClient:
     # ------------ CHAT MESSAGE HANDLER ------------
     def handle_exchange(self, from_name, text):
         print("DEBUG received from server:", repr(from_name), repr(text))  # <--- ADD THIS
+
         # <<< ADDED: store every message in history (for NLP)
         self.chat_history.append(text)
         if len(self.chat_history) > self.max_history:
@@ -124,6 +129,13 @@ class BotClient:
         if not question:
             return
 
+        # --- NEW: dedupe per-user per-question ---
+        last_q = self.last_answered.get(from_name)
+        if last_q == question:
+            print("DEBUG: duplicate question from same user, ignoring:", from_name, repr(question))
+            return
+        self.last_answered[from_name] = question
+    # -----------------------------------------
         print(f"User asked TrishaBot: {question}")
 
         # ---- Call LLM here ----
