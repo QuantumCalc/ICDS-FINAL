@@ -9,6 +9,8 @@ import socket
 import threading
 import json
 from chat_bot_client import ChatBotClient   # LLM wrapper
+from nlp_tools import extract_keywords_yake, summarize_with_sumy #BONUS 2: NLP
+
 
 HOST = "127.0.0.1"      # same machine running the server
 PORT = 1112             # MUST match CHAT_PORT in chat_utils.py
@@ -57,6 +59,10 @@ class BotClient:
         self.sock.connect((HOST, PORT))
         print(f"{self.name} connected to {HOST}:{PORT}")
 
+        # <<< ADDED: for NLP
+        self.chat_history = []
+        self.max_history = 100
+
         # ---- LOGIN to the server ----
         login_msg = json.dumps({"action": "login", "name": self.name})
         mysend(self.sock, login_msg)
@@ -74,11 +80,40 @@ class BotClient:
         # start listening for messages
         threading.Thread(target=self.listen_loop, daemon=True).start()
 
+# ------------ helper to send reply ------------
+    # <<< ADDED: small helper so we don't repeat JSON code
+    def send_reply(self, text: str):
+        print("DEBUG sending reply:", repr(text))  # <--- ADD THIS
+        reply_text = f": {text}"  # keep leading colon so GUI shows "TrishaBot: ..."
+        out = json.dumps({
+            "action": "exchange",
+            "from": self.name,
+            "message": reply_text
+        })
+        mysend(self.sock, out)
 
     # ------------ CHAT MESSAGE HANDLER ------------
     def handle_exchange(self, from_name, text):
+        print("DEBUG received from server:", repr(from_name), repr(text))  # <--- ADD THIS
+        # <<< ADDED: store every message in history (for NLP)
+        self.chat_history.append(text)
+        if len(self.chat_history) > self.max_history:
+            self.chat_history = self.chat_history[-self.max_history:]
+
         # ignore own messages
         if from_name == self.name:
+            return
+        
+        lower = text.lower().strip()
+
+        # <<< ADDED: NLP KEYWORDS COMMAND
+        if lower == "/keywords" or lower.startswith("@trishabot /keywords"):
+            self.reply_keywords()
+            return
+
+        # <<< ADDED: NLP SUMMARY COMMAND
+        if lower == "/summary" or lower.startswith("@trishabot /summary"):
+            self.reply_summary()
             return
 
         # only respond to @trishabot
@@ -91,18 +126,36 @@ class BotClient:
 
         print(f"User asked TrishaBot: {question}")
 
-        # ---- Call your LLM here ----
+        # ---- Call LLM here ----
         reply_text = self.bot.chat(question)  
-        reply_text = f": {reply_text}"
-        
-        # send reply back to server
-        out = json.dumps({
-            "action": "exchange",
-            "from": self.name,
-            "message": reply_text
-        })
-        mysend(self.sock, out)
+        self.send_reply(reply_text)
 
+        # ------------ NLP keyword reply ------------
+    # <<< ADDED
+    def reply_keywords(self):
+        # use the last 40 messages for analysis
+        messages = self.chat_history[-40:]
+        keywords = extract_keywords_yake(messages, top_k=5)
+
+        if not keywords:
+            text = "No keywords found."
+        else:
+            text = "Keywords: " + ", ".join(keywords)
+
+        self.send_reply(text)
+
+    # ------------ NLP summary reply ------------
+    # <<< ADDED
+    def reply_summary(self):
+        messages = self.chat_history[-40:]
+        summary_sentences = summarize_with_sumy(messages, sentences_count=3)
+
+        if not summary_sentences:
+            text = "Not enough chat history to summarize."
+        else:
+            text = "Summary: " + " ".join(summary_sentences)
+
+        self.send_reply(text)
 
     # ------------ MAIN LISTEN LOOP ------------
     def listen_loop(self):
