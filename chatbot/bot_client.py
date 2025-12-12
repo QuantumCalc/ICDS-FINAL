@@ -13,9 +13,9 @@ from nlp_tools import extract_keywords_yake, summarize_with_sumy #BONUS 2: NLP
 
 
 HOST = "127.0.0.1"      # same machine running the server
-PORT = 1112             # MUST match CHAT_PORT in chat_utils.py
+PORT = 1112             # matching the chatport in chat_utils.py
 
-# ---------- protocol helpers copied from chat_utils.py ----------
+# protocol helpers copied from chat_utils.py
 
 SIZE_SPEC = 5
 
@@ -49,7 +49,7 @@ def myrecv(s):
         msg += text
     return msg
 
-# ----------------------------------------------------------------
+# end
 
 
 class BotClient:
@@ -59,19 +59,19 @@ class BotClient:
         self.sock.connect((HOST, PORT))
         print(f"{self.name} connected to {HOST}:{PORT}")
 
-        # <<< ADDED: for NLP
+        # ADDED: for NLP
         self.chat_history = []
         self.max_history = 100
 
-        # remember last answered question per user to avoid duplicate replies
+        # remembers last answered question per user to avoid duplicate replies
         self.last_answered = {}   # maps from_name -> question string
 
-        # ---- LOGIN to the server ----
+        # login to the server
         login_msg = json.dumps({"action": "login", "name": self.name})
         mysend(self.sock, login_msg)
 
-        # ---- AUTO-JOIN GROUP ROOM FOR BONUS FEATURE ----
-        group_room = "projectroom"   # 🔹 choose any room name you like
+        # autojoin room
+        group_room = "projectroom"   # default room name
         connect_msg = json.dumps({
             "action": "connect",
             "target": group_room
@@ -81,14 +81,14 @@ class BotClient:
 
         self.bot = ChatBotClient()
 
-        # start listening for messages
+        # listening for messages
         threading.Thread(target=self.listen_loop, daemon=True).start()
 
-# ------------ helper to send reply ------------
-    # <<< ADDED: small helper so we don't repeat JSON code
+# helper to send reply
+    # ADDED: small helper so it doesn't repeat JSON code
     def send_reply(self, text: str):
-        print("DEBUG sending reply:", repr(text))  # <--- ADD THIS
-        reply_text = f": {text}"  # keep leading colon so GUI shows "TrishaBot: ..."
+        print("DEBUG sending reply:", repr(text))  #debugging help
+        reply_text = f": {text}"  
         out = json.dumps({
             "action": "exchange",
             "from": self.name,
@@ -96,27 +96,27 @@ class BotClient:
         })
         mysend(self.sock, out)
 
-    # ------------ CHAT MESSAGE HANDLER ------------
+    # chat message handler
     def handle_exchange(self, from_name, text):
-        print("DEBUG received from server:", repr(from_name), repr(text))  # <--- ADD THIS
+        print("DEBUG received from server:", repr(from_name), repr(text))
 
-        # <<< ADDED: store every message in history (for NLP)
+        # ADDED: store every message in history (for NLP)
         self.chat_history.append(text)
         if len(self.chat_history) > self.max_history:
             self.chat_history = self.chat_history[-self.max_history:]
 
-        # ignore own messages
+        # ignores own messages
         if from_name == self.name:
             return
         
         lower = text.lower().strip()
 
-        # <<< ADDED: NLP KEYWORDS COMMAND
+        # ADDED: NLP KEYWORDS COMMAND
         if lower == "/keywords" or lower.startswith("@trishabot /keywords"):
             self.reply_keywords()
             return
 
-        # <<< ADDED: NLP SUMMARY COMMAND
+        # ADDED: NLP SUMMARY COMMAND
         if lower == "/summary" or lower.startswith("@trishabot /summary"):
             self.reply_summary()
             return
@@ -129,21 +129,21 @@ class BotClient:
         if not question:
             return
 
-        # --- NEW: dedupe per-user per-question ---
+        # NEW: dedupe per-user per-question
         last_q = self.last_answered.get(from_name)
         if last_q == question:
             print("DEBUG: duplicate question from same user, ignoring:", from_name, repr(question))
             return
         self.last_answered[from_name] = question
-    # -----------------------------------------
+    
         print(f"User asked TrishaBot: {question}")
 
-        # ---- Call LLM here ----
+        # calls LLM here
         reply_text = self.bot.chat(question)  
         self.send_reply(reply_text)
 
-        # ------------ NLP keyword reply ------------
-    # <<< ADDED
+    # NLP /keyword code reply
+    # ADDED
     def reply_keywords(self):
         # use the last 40 messages for analysis
         messages = self.chat_history[-40:]
@@ -156,8 +156,8 @@ class BotClient:
 
         self.send_reply(text)
 
-    # ------------ NLP summary reply ------------
-    # <<< ADDED
+    # NLP /summary code reply
+    # ADDED
     def reply_summary(self):
         messages = self.chat_history[-40:]
         summary_sentences = summarize_with_sumy(messages, sentences_count=3)
@@ -169,7 +169,7 @@ class BotClient:
 
         self.send_reply(text)
 
-    # ------------ MAIN LISTEN LOOP ------------
+    # main listen loop
     def listen_loop(self):
         while True:
             data = myrecv(self.sock)
@@ -188,9 +188,9 @@ class BotClient:
                 sender = msg.get("from")
                 text = msg.get("message", "")
                 self.handle_exchange(sender, text)
-            # ignore login/list/poem/time/etc.
+            # ignore login/list/poem/time etc.
 
-# ------------ ENTRY POINT ------------
+# entry
 if __name__ == "__main__":
     BotClient(name="TrishaBot")
     # keep the program alive

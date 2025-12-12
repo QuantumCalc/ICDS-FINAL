@@ -27,7 +27,6 @@ from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.luhn import LuhnSummarizer
 
-
 # ---------------------------
 # Keyword extraction with YAKE
 # ---------------------------
@@ -87,10 +86,6 @@ def summarize_with_sumy(messages: List[str], sentences_count: int = 3) -> List[s
         # Any unexpected error → also fallback
         print("WARN: summarization failed, using fallback summary:", e)
         return messages[-sentences_count:]
-
-# ---------------------------
-# Small demo (optional)
-# ---------------------------
 
 if __name__ == "__main__":
     demo_history = [

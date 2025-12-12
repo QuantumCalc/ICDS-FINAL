@@ -3,7 +3,7 @@
 from chat_bot_client import ChatBotClient
 
 def main():
-    bot = ChatBotClient()  # uses phi3:mini and your system prompt
+    bot = ChatBotClient()  # uses phi3:mini and system prompt
 
     print("Simple chatbot demo. Type 'quit' to exit.")
     print("Use `/persona ...` to change the bot's personality.\n")
